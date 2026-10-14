@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel - Pro Casino</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        min-height: 100vh;
+    }
+    .header {
+        background: linear-gradient(135deg, #7c2d12, #dc2626);
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .header h1 { font-size: 22px; }
+    .logout-btn {
+        background: #fff; color: #dc2626; border: none;
+        padding: 8px 16px; border-radius: 20px;
+        font-weight: bold; cursor: pointer;
+    }
+    .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+    .tabs {
+        display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .tab {
+        padding: 12px 20px; background: #1e293b; border: 1px solid #334155;
+        border-radius: 8px; cursor: pointer; font-weight: bold; color: #94a3b8;
+    }
+    .tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .panel {
+        background: #1e293b; border: 1px solid #334155;
+        border-radius: 12px; padding: 25px; display: none;
+    }
+    .panel.active { display: block; }
+    .panel h2 { margin-bottom: 20px; color: #fbbf24; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td {
+        padding: 12px; text-align: left; border-bottom: 1px solid #334155;
+    }
+    th { background: #0f172a; color: #fbbf24; font-size: 13px; text-transform: uppercase; }
+    tr:hover { background: #0f172a; }
+    .btn {
+        padding: 8px 14px; border: none; border-radius: 6px;
+        font-weight: bold; cursor: pointer; margin-right: 5px;
+    }
+    .btn-approve { background: #10b981; color: #fff; }
+    .btn-reject { background: #ef4444; color: #fff; }
+    .btn:hover { opacity: 0.85; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label {
+        display: block; margin-bottom: 5px;
+        color: #94a3b8; font-size: 14px;
+    }
+    .form-input {
+        width: 100%; padding: 12px; background: #0f172a;
+        border: 1px solid #334155; border-radius: 8px;
+        color: #fff; font-size: 15px;
+    }
+    .submit-btn {
+        padding: 12px 24px; background: #3b82f6; color: #fff;
+        border: none; border-radius: 8px; font-weight: bold;
+        cursor: pointer; font-size: 15px;
+    }
+    .empty { text-align: center; padding: 30px; color: #94a3b8; }
+    .login-screen {
+        display: flex; justify-content: center;
+        align-items: center; min-height: 100vh;
+    }
+    .login-box {
+        background: #1e293b; padding: 40px; border-radius: 15px;
+        width: 100%; max-width: 400px; text-align: center;
+        border: 1px solid #334155;
+    }
+    .login-box h1 { color: #fbbf24; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <h1>🔐 ADMIN LOGIN</h1>
+        <p style="color:#94a3b8; margin-bottom:20px;">Enter admin password</p>
+        <input type="password" class="form-input" id="adminPassword" placeholder="Password" style="margin-bottom:15px;">
+        <button class="submit-btn" style="width:100%;" onclick="adminLogin()">Login</button>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+    <div class="header">
+        <h1>👑 ADMIN PANEL</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('pending', this)">📥 Pending Deposits</div>
+            <div class="tab" onclick="switchTab('withdrawals', this)">💸 Pending Withdrawals</div>
+            <div class="tab" onclick="switchTab('players', this)">👥 All Players</div>
+            <div class="tab" onclick="switchTab('allot', this)">💰 Allot Coins</div>
+            <div class="tab" onclick="switchTab('transactions', this)">📜 All Transactions</div>
+        </div>
+
+        <!-- PENDING DEPOSITS -->
+        <div class="panel active" id="panel-pending">
+            <h2>Pending Deposit Requests</h2>
+            <div id="pendingList"></div>
+        </div>
+
+        <!-- PENDING WITHDRAWALS -->
+        <div class="panel" id="panel-withdrawals">
+            <h2>Pending Withdrawal Requests</h2>
+            <div id="withdrawalsList"></div>
+        </div>
+
+        <!-- PLAYERS -->
+        <div class="panel" id="panel-players">
+            <h2>All Players</h2>
+            <div id="playersList"></div>
+        </div>
+
+        <!-- ALLOT COINS -->
+        <div class="panel" id="panel-allot">
+            <h2>Manually Allot Coins</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" class="form-input" id="allotUsername" placeholder="e.g. player1">
+            </div>
+            <div class="form-group">
+                <label>Amount (coins)</label>
+                <input type="number" class="form-input" id="allotAmount" placeholder="e.g. 500">
+            </div>
+            <div class="form-group">
+                <label>Reason</label>
+                <input type="text" class="form-input" id="allotReason" placeholder="e.g. Welcome bonus, Correction">
+            </div>
+            <button class="submit-btn" onclick="allotCoins()">💰 Allot Coins</button>
+        </div>
+
+        <!-- TRANSACTIONS -->
+        <div class="panel" id="panel-transactions">
+            <h2>All Transactions (Last 50)</h2>
+            <div id="transactionsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api';
+
+async function adminLogin() {
+    const password = document.getElementById('adminPassword').value;
+    try {
+        const res = await fetch(`${API}/admin/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadPending();
+            loadWithdrawals();
+            loadPlayers();
+            loadTransactions();
+        } else {
+            alert(data.error);
+        }
+    } catch (e) {
+        alert('Server not running!');
+    }
+}
+
+function logout() {
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminPassword').value = '';
+}
+
+function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+
+    if (name === 'pending') loadPending();
+    if (name === 'withdrawals') loadWithdrawals();
+    if (name === 'players') loadPlayers();
+    if (name === 'transactions') loadTransactions();
+}
+
+// --- PENDING DEPOSITS ---
+async function loadPending() {
+    const res = await fetch(`${API}/admin/pending`);
+    const data = await res.json();
+    const list = document.getElementById('pendingList');
+
+    if (data.pending.length === 0) {
+        list.innerHTML = '<div class="empty">✅ No pending deposit requests</div>';
+        return;
+    }
+
+    let html = '<table><tr><th>Player</th><th>Amount</th><th>Method</th><th>Time</th><th>Action</th></tr>';
+    data.pending.forEach(p => {
+        const time = new Date(p.date).toLocaleString();
+        html += `<tr>
+            <td><b>${p.username}</b></td>
+            <td>₹${p.amount.toLocaleString('en-IN')}</td>
+            <td>${p.method}</td>
+            <td style="font-size:12px;">${time}</td>
+            <td>
+                <button class="btn btn-approve" onclick="approve('${p.id}')">✓ Approve</button>
+                <button class="btn btn-reject" onclick="reject('${p.id}')">✗ Reject</button>
+            </td>
+        </tr>`;
+    });
+    html += '</table>';
+    list.innerHTML = html;
+}
+
+async function approve(id) {
+    if (!confirm('Approve this deposit?')) return;
+    const res = await fetch(`${API}/admin/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('✅ Approved! Coins added to player wallet.');
+        loadPending();
+        loadPlayers();
+    } else {
+        alert('Error: ' + data.error);
+    }
+}
+
+async function reject(id) {
+    if (!confirm('Reject this deposit?')) return;
+    await fetch(`${API}/admin/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id })
+    });
+    alert('❌ Rejected.');
+    loadPending();
+}
+
+// --- PENDING WITHDRAWALS ---
+async function loadWithdrawals() {
+    const res = await fetch(`${API}/admin/withdrawals`);
+    const data = await res.json();
+    const list = document.getElementById('withdrawalsList');
+
+    if (data.pending.length === 0) {
+        list.innerHTML = '<div class="empty">✅ No pending withdrawal requests</div>';
+        return;
+    }
+
+    let html = '<table><tr><th>Player</th><th>Amount</th><th>UPI ID</th><th>Time</th><th>Action</th></tr>';
+    data.pending.forEach(w => {
+        const time = new Date(w.date).toLocaleString();
+        html += `<tr>
+            <td><b>${w.username}</b></td>
+            <td style="color:#ef4444; font-weight:bold;">₹${w.amount.toLocaleString('en-IN')}</td>
+            <td style="font-size:12px;">${w.upiId}</td>
+            <td style="font-size:12px;">${time}</td>
+            <td>
+                <button class="btn btn-approve" onclick="approveWithdrawal('${w.id}')">✓ Approve</button>
+                <button class="btn btn-reject" onclick="rejectWithdrawal('${w.id}')">✗ Reject</button>
+            </td>
+        </tr>`;
+    });
+    html += '</table>';
+    list.innerHTML = html;
+}
+
+async function approveWithdrawal(id) {
+    if (!confirm('Approve this withdrawal? Coins will be deducted from player balance.')) return;
+    const res = await fetch(`${API}/admin/approve-withdrawal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert('✅ Approved! Coins deducted from player wallet.');
+        loadWithdrawals();
+        loadPlayers();
+    } else {
+        alert('Error: ' + data.error);
+    }
+}
+
+async function rejectWithdrawal(id) {
+    if (!confirm('Reject this withdrawal?')) return;
+    await fetch(`${API}/admin/reject-withdrawal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id })
+    });
+    alert('❌ Rejected.');
+    loadWithdrawals();
+}
+
+// --- PLAYERS ---
+async function loadPlayers() {
+    const res = await fetch(`${API}/admin/players`);
+    const data = await res.json();
+    const list = document.getElementById('playersList');
+
+    if (data.players.length === 0) {
+        list.innerHTML = '<div class="empty">No players yet</div>';
+        return;
+    }
+
+    let html = '<table><tr><th>Username</th><th>Balance</th><th>Joined</th></tr>';
+    data.players.forEach(p => {
+        const joined = new Date(p.createdAt).toLocaleDateString();
+        html += `<tr>
+            <td><b>${p.username}</b></td>
+            <td style="color:#10b981; font-weight:bold;">₹${p.balance.toLocaleString('en-IN')}</td>
+            <td>${joined}</td>
+        </tr>`;
+    });
+    html += '</table>';
+    list.innerHTML = html;
+}
+
+// --- ALLOT COINS ---
+async function allotCoins() {
+    const username = document.getElementById('allotUsername').value.trim();
+    const amount = parseInt(document.getElementById('allotAmount').value);
+    const reason = document.getElementById('allotReason').value.trim();
+
+    if (!username || !amount) return alert('Please fill username and amount');
+    if (!confirm(`Allot ₹${amount} to ${username}?`)) return;
+
+    const res = await fetch(`${API}/admin/allot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, amount, reason })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+        alert(`✅ Allotted ₹${amount} to ${username}. New balance: ₹${data.newBalance}`);
+        document.getElementById('allotUsername').value = '';
+        document.getElementById('allotAmount').value = '';
+        document.getElementById('allotReason').value = '';
+        loadPlayers();
+        loadTransactions();
+    } else {
+        alert('Error: ' + data.error);
+    }
+}
+
+// --- TRANSACTIONS ---
+async function loadTransactions() {
+    const res = await fetch(`${API}/admin/transactions`);
+    const data = await res.json();
+    const list = document.getElementById('transactionsList');
+
+    if (data.transactions.length === 0) {
+        list.innerHTML = '<div class="empty">No transactions yet</div>';
+        return;
+    }
+
+    let html = '<table><tr><th>Player</th><th>Type</th><th>Amount</th><th>Time</th></tr>';
+    data.transactions.forEach(t => {
+        const time = new Date(t.date).toLocaleString();
+        const color = t.isPositive ? '#10b981' : '#ef4444';
+        const sign = t.isPositive ? '+' : '-';
+        html += `<tr>
+            <td><b>${t.username}</b></td>
+            <td>${t.type}</td>
+            <td style="color:${color}; font-weight:bold;">${sign}₹${t.amount.toLocaleString('en-IN')}</td>
+            <td style="font-size:12px;">${time}</td>
+        </tr>`;
+    });
+    html += '</table>';
+    list.innerHTML = html;
+}
+</script>
+</body>
+</html>
