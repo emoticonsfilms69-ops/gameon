@@ -377,10 +377,12 @@
 </div>
 
 <script>
-    const API_URL =    const API_URL = (location.protocol === 'file:') ? 'http://localhost:3000/api' : '/api';
+    // 🔥 SMART API LINE: localhost when playing from PC files, /api when online
+    const API_URL = (location.protocol === 'file:') ? 'http://localhost:3000/api' : '/api';
+
     let currentUser = null;
     let balance = 0;
-    let selectedBet = null; // {type:'color'|'side', value:'red'|'big'|...}
+    let selectedBet = null;
     let rechargeAmount = 1000;
     let currentPeriod = 20261013001;
     let recentResults = [];
@@ -458,7 +460,7 @@
         if (bet.value === 'big') return n >= 5;
         if (bet.value === 'small') return n <= 4;
         if (bet.value === 'odd') return n % 2 === 1;
-        return n % 2 === 0; // even
+        return n % 2 === 0;
     }
 
     function multFor(bet) {
@@ -572,7 +574,6 @@
         showResult("Drawing result...", "#334155");
         playSpinStart();
 
-        // Draw a number 1-8
         const n = Math.floor(Math.random() * 8) + 1;
         const winningColor = colorOfNumber(n);
 
@@ -637,190 +638,4 @@
         }
 
         updateUI();
-        document.getElementById('playBtn').disabled = false;
-        document.getElementById('betAmount').value = '';
-        selectedBet = null;
-        clearSelection();
-    }
-
-    function showResult(msg, bg) {
-        const box = document.getElementById('resultBox');
-        box.innerText = msg;
-        box.style.backgroundColor = bg;
-    }
-
-    function updatePeriod() {
-        currentPeriod++;
-        document.getElementById('periodId').innerText = currentPeriod;
-    }
-
-    function updateRecentResults(n) {
-        recentResults.unshift({ c: colorOfNumber(n), n: n });
-        if (recentResults.length > 6) recentResults.pop();
-        const container = document.getElementById('recentResults');
-        container.innerHTML = '';
-        recentResults.forEach(r => {
-            const dot = document.createElement('div');
-            dot.className = 'result-dot';
-            dot.style.backgroundColor = colorHex[r.c];
-            dot.innerText = r.n;
-            container.appendChild(dot);
-        });
-    }
-
-    // --- MODALS ---
-    function openModal(id) {
-        document.getElementById(id).classList.add('active');
-        playClick();
-        if (id === 'historyModal') loadHistory();
-        if (id === 'withdrawModal') {
-            document.getElementById('withdrawBalance').innerText = '₹' + balance.toLocaleString('en-IN');
-        }
-    }
-
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('active');
-    }
-
-    function selectAmount(amount, el) {
-        rechargeAmount = amount;
-        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-        el.classList.add('selected');
-        document.getElementById('payBtn').innerText = `Request ₹${amount.toLocaleString('en-IN')}`;
-        playClick();
-    }
-
-    // --- DEPOSIT ---
-    async function processPayment() {
-        const payBtn = document.getElementById('payBtn');
-        payBtn.innerHTML = '<div class="spinner"></div> Submitting...';
-        payBtn.disabled = true;
-
-        setTimeout(async () => {
-            try {
-                const response = await fetch(`${API_URL}/deposit-request`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: currentUser,
-                        amount: rechargeAmount,
-                        method: 'UPI'
-                    })
-                });
-                const data = await response.json();
-
-                if (response.ok) {
-                    playSuccess();
-                    payBtn.innerText = '✓ Request Sent!';
-                    payBtn.style.background = '#10b981';
-                    setTimeout(() => {
-                        closeModal('rechargeModal');
-                        payBtn.innerText = `Request ₹${rechargeAmount.toLocaleString('en-IN')}`;
-                        payBtn.style.background = '';
-                        payBtn.disabled = false;
-                        showResult(`⏳ ₹${rechargeAmount.toLocaleString('en-IN')} deposit requested. Waiting for admin approval.`, "#1e3a8a");
-                    }, 1500);
-                } else {
-                    alert('Error: ' + data.error);
-                    payBtn.innerText = `Request ₹${rechargeAmount.toLocaleString('en-IN')}`;
-                    payBtn.disabled = false;
-                }
-            } catch (error) {
-                alert('Error connecting to server');
-                payBtn.innerText = `Request ₹${rechargeAmount.toLocaleString('en-IN')}`;
-                payBtn.disabled = false;
-            }
-        }, 1000);
-    }
-
-    // --- WITHDRAWAL ---
-    async function processWithdrawal() {
-        const amount = parseInt(document.getElementById('withdrawAmount').value);
-        const upiId = document.getElementById('withdrawUPI').value.trim();
-        const withdrawBtn = document.getElementById('withdrawBtn');
-
-        if (!amount || amount < 100) return alert('Minimum withdrawal amount is ₹100');
-        if (amount > balance) return alert('Insufficient balance');
-        if (!upiId || !upiId.includes('@')) return alert('Please enter a valid UPI ID');
-        if (!confirm(`Withdraw ₹${amount} to ${upiId}?`)) return;
-
-        withdrawBtn.innerHTML = '<div class="spinner"></div> Submitting...';
-        withdrawBtn.disabled = true;
-
-        setTimeout(async () => {
-            try {
-                const response = await fetch(`${API_URL}/withdraw-request`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: currentUser,
-                        amount,
-                        upiId
-                    })
-                });
-                const data = await response.json();
-
-                if (response.ok) {
-                    playSuccess();
-                    withdrawBtn.innerText = '✓ Request Sent!';
-                    withdrawBtn.style.background = '#10b981';
-                    setTimeout(() => {
-                        closeModal('withdrawModal');
-                        withdrawBtn.innerText = 'Request Withdrawal';
-                        withdrawBtn.style.background = '';
-                        withdrawBtn.disabled = false;
-                        document.getElementById('withdrawAmount').value = '';
-                        document.getElementById('withdrawUPI').value = '';
-                        showResult(`⏳ Withdrawal of ₹${amount} requested. Waiting for admin approval.`, "#1e3a8a");
-                    }, 1500);
-                } else {
-                    alert('Error: ' + data.error);
-                    withdrawBtn.innerText = 'Request Withdrawal';
-                    withdrawBtn.disabled = false;
-                }
-            } catch (error) {
-                alert('Error connecting to server');
-                withdrawBtn.innerText = 'Request Withdrawal';
-                withdrawBtn.disabled = false;
-            }
-        }, 1000);
-    }
-
-    // --- HISTORY ---
-    async function loadHistory() {
-        try {
-            const response = await fetch(`${API_URL}/history/${currentUser}`);
-            const data = await response.json();
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-
-            if (data.transactions.length === 0) {
-                list.innerHTML = '<li style="text-align:center; color:#94a3b8; padding:20px;">No transactions yet.</li>';
-                return;
-            }
-
-            data.transactions.forEach(t => {
-                const li = document.createElement('li');
-                li.className = 'history-item';
-                const sign = t.isPositive ? '+' : '-';
-                const colorClass = t.isPositive ? 'positive' : 'negative';
-                const date = new Date(t.date);
-                const timeStr = date.toLocaleString();
-
-                li.innerHTML = `
-                    <div class="hist-details">
-                        <div class="hist-type">${t.type}</div>
-                        <div class="hist-date">${timeStr}</div>
-                    </div>
-                    <div class="hist-amount ${colorClass}">${sign}₹${t.amount.toLocaleString('en-IN')}</div>
-                `;
-                list.appendChild(li);
-            });
-        } catch (error) {
-            console.error('Error loading history:', error);
-        }
-    }
-</script>
-
-</body>
-</html>
+        document
