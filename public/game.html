@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Color Casino</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--bg-dark);
+            padding-bottom: 80px;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 22px; font-weight: bold; }
+        .wallet-info { text-align: right; }
+        .wallet-label { font-size: 12px; color: #bfdbfe; }
+        .wallet-balance { font-size: 24px; font-weight: bold; }
+        .header-btns { margin-top: 5px; }
+        .deposit-btn {
+            background: #fbbf24; color: #000; border: none;
+            padding: 8px 16px; border-radius: 20px; font-weight: bold;
+            cursor: pointer; font-size: 14px;
+        }
+        .sound-btn {
+            background: rgba(255,255,255,0.25); color: #fff; border: none;
+            padding: 8px 12px; border-radius: 20px; font-size: 14px;
+            cursor: pointer; margin-right: 6px;
+        }
+        .game-info {
+            background: var(--card-bg);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #334155;
+        }
+        .period-id { font-size: 14px; color: var(--text-muted); }
+        .period-id span { color: var(--accent); font-weight: bold; }
+        .recent-results { display: flex; gap: 6px; }
+        .result-dot {
+            width: 22px; height: 22px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: bold; color: #fff;
+        }
+        .game-board { padding: 20px; }
+        .colors-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 15px; margin-bottom: 15px;
+        }
+        .color-btn {
+            padding: 20px; font-size: 18px; font-weight: bold;
+            border: 2px solid transparent; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s ease;
+            color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .color-btn.selected {
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+        .mult-tag { display: block; font-size: 12px; margin-top: 4px; opacity: .9; }
+        .side-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 10px; margin-bottom: 20px;
+        }
+        .side-btn {
+            padding: 14px 4px; border-radius: 10px; border: 2px solid transparent;
+            color: #fff; font-weight: bold; cursor: pointer; font-size: 14px;
+            text-align: center; transition: all .2s;
+        }
+        .side-btn.selected { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,.5); }
+        .side-big { background: linear-gradient(135deg,#f59e0b,#b45309); }
+        .side-small { background: linear-gradient(135deg,#06b6d4,#0e7490); }
+        .side-odd { background: linear-gradient(135deg,#8b5cf6,#6d28d9); }
+        .side-even { background: linear-gradient(135deg,#ec4899,#be185d); }
+        .light-active {
+            border: 4px solid #fff !important;
+            box-shadow: 0 0 30px 10px rgba(255, 255, 255, 0.9) !important;
+            transform: scale(1.1) !important;
+        }
+        .btn-red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .btn-green { background: linear-gradient(135deg, #10b981, #047857); }
+        .btn-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .btn-yellow { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .bet-controls {
+            background: var(--card-bg); padding: 20px;
+            border-radius: 15px; border: 1px solid #334155;
+        }
+        .balance-row {
+            display: flex; justify-content: space-between;
+            margin-bottom: 15px; font-size: 14px; color: var(--text-muted);
+        }
+        .balance-row span { color: var(--success); font-weight: bold; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .bet-input {
+            flex: 1; padding: 12px; background: #0f172a;
+            border: 1px solid #334155; border-radius: 8px;
+            color: #fff; font-size: 18px; text-align: center;
+        }
+        .play-btn {
+            width: 100%; padding: 16px; font-size: 18px;
+            font-weight: bold; background: linear-gradient(135deg, #10b981, #059669);
+            color: white; border: none; border-radius: 10px;
+            cursor: pointer; text-transform: uppercase;
+        }
+        .play-btn:disabled { background: #475569; cursor: not-allowed; }
+        .result-box {
+            margin: 20px; padding: 15px; border-radius: 10px;
+            text-align: center; font-weight: bold;
+            background: var(--card-bg); border: 1px solid #334155;
+            min-height: 50px; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .legend {
+            margin: 0 20px; padding: 12px; background: #0f172a;
+            border-radius: 8px; font-size: 11px; color: var(--text-muted);
+            text-align: center; line-height: 1.6;
+        }
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; max-width: 480px;
+            background: #1e293b; display: flex;
+            border-top: 1px solid #334155;
+        }
+        .nav-item {
+            flex: 1; padding: 15px; text-align: center;
+            cursor: pointer; color: var(--text-muted);
+            font-weight: bold; font-size: 14px;
+        }
+        .nav-item.active { color: var(--accent); border-top: 3px solid var(--accent); }
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 100;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--card-bg); width: 90%; max-width: 400px;
+            border-radius: 15px; padding: 25px;
+            max-height: 85vh; overflow-y: auto;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 20px;
+        }
+        .modal-title { font-size: 20px; font-weight: bold; }
+        .close-btn {
+            background: none; border: none; color: #fff;
+            font-size: 24px; cursor: pointer;
+        }
+        .amount-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px; margin-bottom: 20px;
+        }
+        .amount-btn {
+            padding: 15px; background: #0f172a;
+            border: 2px solid #334155; border-radius: 10px;
+            color: #fff; font-weight: bold; cursor: pointer;
+            text-align: center;
+        }
+        .amount-btn.selected {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .pay-btn {
+            width: 100%; padding: 15px; background: var(--accent);
+            color: #fff; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .history-list { list-style: none; padding: 0; margin: 0; }
+        .history-item {
+            display: flex; justify-content: space-between;
+            padding: 15px 0; border-bottom: 1px solid #334155;
+        }
+        .hist-details { display: flex; flex-direction: column; }
+        .hist-type { font-weight: bold; }
+        .hist-date { font-size: 12px; color: var(--text-muted); }
+        .hist-amount.positive { color: var(--success); }
+        .hist-amount.negative { color: var(--danger); }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top: 4px solid #fff;
+            width: 30px; height: 30px;
+            animation: spin 1s linear infinite; margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .login-screen {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .login-box {
+            background: var(--card-bg); padding: 40px;
+            border-radius: 15px; width: 100%; max-width: 400px;
+            text-align: center;
+        }
+        .login-input {
+            width: 100%; padding: 15px; margin: 10px 0;
+            background: #0f172a; border: 1px solid #334155;
+            border-radius: 8px; color: #fff;
+            font-size: 16px; text-align: center;
+            box-sizing: border-box;
+        }
+        .login-btn {
+            width: 100%; padding: 15px; background: var(--accent);
+            color: #fff; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: bold;
+            cursor: pointer; margin-top: 10px;
+        }
+        .info-note {
+            margin-top: 15px; padding: 12px; background: #0f172a;
+            border-radius: 8px; font-size: 12px; color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <h1>🎰 PRO CASINO</h1>
+        <p style="color: var(--text-muted);">Login or create an account</p>
+        <input type="text" class="login-input" id="usernameInput" placeholder="Username">
+        <input type="password" class="login-input" id="passwordInput" placeholder="Password (min 4 characters)">
+        <button class="login-btn" onclick="login()">🔐 Login / Register</button>
+        <div class="info-note">
+            🔒 Your account is protected by a password.<br>
+            New accounts get a ₹1,000 welcome bonus!
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app-container" id="appContainer" style="display: none;">
+    <div class="header">
+        <div class="logo">🎰 PRO CASINO</div>
+        <div class="wallet-info">
+            <div class="wallet-label">Welcome, <span id="usernameDisplay"></span></div>
+            <div class="wallet-balance" id="headerBalance">₹0</div>
+            <div class="header-btns">
+                <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+                <button class="deposit-btn" onclick="openModal('rechargeModal')">+ Deposit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-info">
+        <div class="period-id">Period: <span id="periodId">20261013001</span></div>
+        <div class="recent-results" id="recentResults"></div>
+    </div>
+
+    <div class="game-board">
+        <div id="betGrid">
+            <div class="colors-grid">
+                <button class="color-btn btn-red" onclick="selectColor('red', this)">RED<span class="mult-tag">2x · #1-3</span></button>
+                <button class="color-btn btn-green" onclick="selectColor('green', this)">GREEN<span class="mult-tag">3x · #4-5</span></button>
+                <button class="color-btn btn-blue" onclick="selectColor('blue', this)">BLUE<span class="mult-tag">3x · #6-7</span></button>
+                <button class="color-btn btn-yellow" onclick="selectColor('yellow', this)">YELLOW<span class="mult-tag">6x · #8</span></button>
+            </div>
+
+            <div class="side-grid">
+                <button class="side-btn side-big" onclick="selectSide('big', this)">BIG<span class="mult-tag">1.9x</span></button>
+                <button class="side-btn side-small" onclick="selectSide('small', this)">SMALL<span class="mult-tag">1.9x</span></button>
+                <button class="side-btn side-odd" onclick="selectSide('odd', this)">ODD<span class="mult-tag">1.9x</span></button>
+                <button class="side-btn side-even" onclick="selectSide('even', this)">EVEN<span class="mult-tag">1.9x</span></button>
+            </div>
+        </div>
+
+        <div class="bet-controls">
+            <div class="balance-row">
+                <div>Available Balance: <span id="availBalance">₹0</span></div>
+            </div>
+            <div class="input-group">
+                <input type="number" class="bet-input" id="betAmount" placeholder="Enter amount" min="1">
+            </div>
+            <button class="play-btn" id="playBtn" onclick="playGame()">PLACE BET</button>
+        </div>
+
+        <div class="result-box" id="resultBox">Select a color or side and place your bet!</div>
+        <div class="legend">
+            🎲 A number 1–8 is drawn each round<br>
+            1-3 = RED · 4-5 = GREEN · 6-7 = BLUE · 8 = YELLOW<br>
+            5-8 = BIG · 1-4 = SMALL · Odd/Even by number
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active">🎮 Game</div>
+        <div class="nav-item" onclick="openModal('historyModal')">📜 History</div>
+        <div class="nav-item" onclick="openModal('rechargeModal')">💳 Deposit</div>
+        <div class="nav-item" onclick="openModal('withdrawModal')">💸 Withdraw</div>
+    </div>
+</div>
+
+<!-- RECHARGE MODAL -->
+<div class="modal-overlay" id="rechargeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Deposit Funds</div>
+            <button class="close-btn" onclick="closeModal('rechargeModal')">&times;</button>
+        </div>
+        <div class="amount-grid">
+            <div class="amount-btn" onclick="selectAmount(100, this)">₹100</div>
+            <div class="amount-btn" onclick="selectAmount(500, this)">₹500</div>
+            <div class="amount-btn selected" onclick="selectAmount(1000, this)">₹1,000</div>
+            <div class="amount-btn" onclick="selectAmount(2000, this)">₹2,000</div>
+            <div class="amount-btn" onclick="selectAmount(5000, this)">₹5,000</div>
+            <div class="amount-btn" onclick="selectAmount(10000, this)">₹10,000</div>
+        </div>
+        <button class="pay-btn" id="payBtn" onclick="processPayment()">Request ₹1,000</button>
+        <div class="info-note">
+            ⏳ Deposits require admin approval. Coins will be added after verification.
+        </div>
+    </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="modal-overlay" id="withdrawModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Withdraw Funds</div>
+            <button class="close-btn" onclick="closeModal('withdrawModal')">&times;</button>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <div style="color: var(--text-muted); font-size: 14px; margin-bottom: 5px;">Available Balance</div>
+            <div style="font-size: 24px; font-weight: bold; color: var(--success);" id="withdrawBalance">₹0</div>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px;">Amount to Withdraw</label>
+            <input type="number" class="bet-input" id="withdrawAmount" placeholder="Enter amount" min="100" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; color: var(--text-muted); font-size: 14px; margin-bottom: 5px;">UPI ID</label>
+            <input type="text" class="bet-input" id="withdrawUPI" placeholder="yourname@upi" style="width: 100%; box-sizing: border-box;">
+        </div>
+        <button class="pay-btn" id="withdrawBtn" onclick="processWithdrawal()">Request Withdrawal</button>
+        <div class="info-note">
+            ⚠️ Minimum withdrawal: ₹100<br>
+            ⏳ Withdrawals are processed after admin approval
+        </div>
+    </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="historyModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Transaction History</div>
+            <button class="close-btn" onclick="closeModal('historyModal')">&times;</button>
+        </div>
+        <ul class="history-list" id="historyList"></ul>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:3000/api';
+    let currentUser = null;
+    let balance = 0;
+    let selectedBet = null; // {type:'color'|'side', value:'red'|'big'|...}
+    let rechargeAmount = 1000;
+    let currentPeriod = 20261013001;
+    let recentResults = [];
+
+    const colors = ['red', 'green', 'blue', 'yellow'];
+    const colorHex = { red: '#ef4444', green: '#10b981', blue: '#3b82f6', yellow: '#f59e0b' };
+    const COLOR_MULT = { red: 2, green: 3, blue: 3, yellow: 6 };
+    const SIDE_MULT = 1.9;
+    const colorBtns = Array.from(document.querySelectorAll('.color-btn'));
+    const sideBtns = Array.from(document.querySelectorAll('.side-btn'));
+
+    // ============================================
+    // 🔊 SOUND ENGINE
+    // ============================================
+    let audioCtx = null;
+    let soundOn = localStorage.getItem('casino_sound') !== 'off';
+
+    function getAudioCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+    }
+
+    function playTone(freq, duration, type, volume, delay) {
+        if (!soundOn) return;
+        try {
+            const ctx = getAudioCtx();
+            const t = ctx.currentTime + (delay || 0);
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(volume || 0.15, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + duration);
+        } catch (e) {}
+    }
+
+    function playClick() { playTone(600, 0.08, 'square', 0.07); }
+    function playTick(step) { playTone(350 + (step * 10), 0.06, 'square', 0.06); }
+    function playSpinStart() { playTone(200, 0.25, 'triangle', 0.12); playTone(300, 0.25, 'triangle', 0.12, 0.1); }
+    function playWin() {
+        [523, 659, 784, 1047].forEach((f, i) => playTone(f, 0.25, 'sine', 0.2, i * 0.12));
+        playTone(1568, 0.45, 'triangle', 0.15, 0.5);
+    }
+    function playLose() {
+        playTone(300, 0.2, 'sawtooth', 0.1);
+        playTone(220, 0.25, 'sawtooth', 0.1, 0.18);
+        playTone(140, 0.45, 'sawtooth', 0.1, 0.36);
+    }
+    function playSuccess() { playTone(880, 0.15, 'sine', 0.15); playTone(1175, 0.3, 'sine', 0.15, 0.12); }
+
+    function toggleSound() {
+        soundOn = !soundOn;
+        localStorage.setItem('casino_sound', soundOn ? 'on' : 'off');
+        document.getElementById('soundBtn').innerText = soundOn ? '🔊' : '🔇';
+        if (soundOn) playClick();
+    }
+
+    // ============================================
+    // NUMBER / RESULT LOGIC
+    // ============================================
+    function colorOfNumber(n) {
+        if (n <= 3) return 'red';
+        if (n <= 5) return 'green';
+        if (n <= 7) return 'blue';
+        return 'yellow';
+    }
+
+    function evalBet(bet, n) {
+        if (bet.type === 'color') return bet.value === colorOfNumber(n);
+        if (bet.value === 'big') return n >= 5;
+        if (bet.value === 'small') return n <= 4;
+        if (bet.value === 'odd') return n % 2 === 1;
+        return n % 2 === 0; // even
+    }
+
+    function multFor(bet) {
+        return bet.type === 'color' ? COLOR_MULT[bet.value] : SIDE_MULT;
+    }
+
+    function betLabel(bet) {
+        return `${bet.value.toUpperCase()} ${multFor(bet)}x`;
+    }
+
+    // ============================================
+
+    window.addEventListener('load', () => {
+        const saved = localStorage.getItem('casino_username');
+        if (saved) document.getElementById('usernameInput').value = saved;
+        document.getElementById('soundBtn').innerText = soundOn ? '🔊' : '🔇';
+    });
+
+    // --- LOGIN / REGISTER ---
+    async function login() {
+        const username = document.getElementById('usernameInput').value.trim();
+        const password = document.getElementById('passwordInput').value;
+
+        if (!username) return alert('Please enter a username');
+        if (!password || password.length < 4) return alert('Password must be at least 4 characters');
+
+        try {
+            const response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                currentUser = username;
+                localStorage.setItem('casino_username', username);
+                balance = data.user.balance;
+                document.getElementById('usernameDisplay').innerText = username;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                updateUI();
+                showResult(data.message, "#064e3b");
+                playSuccess();
+            } else {
+                alert(data.error);
+                playLose();
+            }
+        } catch (error) {
+            alert('Error connecting to server. Make sure backend is running!');
+        }
+    }
+
+    function updateUI() {
+        const formatted = '₹' + balance.toLocaleString('en-IN');
+        document.getElementById('headerBalance').innerText = formatted;
+        document.getElementById('availBalance').innerText = formatted;
+    }
+
+    // --- BET SELECTION ---
+    function clearSelection() {
+        colorBtns.forEach(b => b.classList.remove('selected'));
+        sideBtns.forEach(b => b.classList.remove('selected'));
+    }
+
+    function selectColor(color, el) {
+        selectedBet = { type: 'color', value: color };
+        clearSelection();
+        el.classList.add('selected');
+        playClick();
+    }
+
+    function selectSide(side, el) {
+        selectedBet = { type: 'side', value: side };
+        clearSelection();
+        el.classList.add('selected');
+        playClick();
+    }
+
+    // --- GAME ---
+    async function playGame() {
+        const betInput = document.getElementById('betAmount');
+        const bet = parseInt(betInput.value);
+
+        if (!selectedBet) return showResult("⚠️ Please select a color or side!", "#334155");
+        if (isNaN(bet) || bet <= 0) return showResult("⚠️ Enter a valid bet amount!", "#334155");
+        if (bet > balance) return showResult("⚠️ Insufficient balance!", "#334155");
+
+        const label = betLabel(selectedBet);
+
+        try {
+            const response = await fetch(`${API_URL}/bet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: currentUser,
+                    amount: bet,
+                    color: label
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) return showResult("⚠️ " + data.error, "#334155");
+            balance = data.newBalance;
+            updateUI();
+        } catch (error) {
+            return showResult("⚠️ Server error", "#334155");
+        }
+
+        document.getElementById('playBtn').disabled = true;
+        document.getElementById('betGrid').style.pointerEvents = 'none';
+        showResult("Drawing result...", "#334155");
+        playSpinStart();
+
+        // Draw a number 1-8
+        const n = Math.floor(Math.random() * 8) + 1;
+        const winningColor = colorOfNumber(n);
+
+        startLightAnimation(colors.indexOf(winningColor), n, bet);
+    }
+
+    function startLightAnimation(targetIndex, n, bet) {
+        let currentStep = 0;
+        let totalSteps = 20 + targetIndex;
+        let currentLightIndex = 0;
+
+        function step() {
+            colorBtns.forEach(btn => btn.classList.remove('light-active'));
+            colorBtns[currentLightIndex].classList.add('light-active');
+            playTick(currentStep);
+
+            if (currentStep >= totalSteps) {
+                setTimeout(() => processResult(n, bet), 500);
+                return;
+            }
+
+            currentLightIndex = (currentLightIndex + 1) % 4;
+            currentStep++;
+            let progress = currentStep / totalSteps;
+            let delay = 60 + (Math.pow(progress, 2.5) * 400);
+            setTimeout(step, delay);
+        }
+        step();
+    }
+
+    async function processResult(n, bet) {
+        colorBtns.forEach(btn => btn.classList.remove('light-active'));
+        document.getElementById('betGrid').style.pointerEvents = 'auto';
+        updateRecentResults(n);
+        updatePeriod();
+
+        const winningColor = colorOfNumber(n);
+        const traits = (n >= 5 ? 'BIG' : 'SMALL') + '·' + (n % 2 === 1 ? 'ODD' : 'EVEN');
+        const won = evalBet(selectedBet, n);
+
+        if (won) {
+            let winnings = Math.floor(bet * multFor(selectedBet));
+            balance += winnings;
+            try {
+                await fetch(`${API_URL}/win`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser,
+                        amount: winnings,
+                        color: `${betLabel(selectedBet)} #${n}`
+                    })
+                });
+            } catch (error) {
+                console.error('Error recording win:', error);
+            }
+            showResult(`🎉 WIN! #${n} ${winningColor.toUpperCase()} (${traits}) +₹${winnings}`, "#064e3b");
+            playWin();
+        } else {
+            showResult(`💥 LOSE! #${n} ${winningColor.toUpperCase()} (${traits}) -₹${bet}`, "#7f1d1d");
+            playLose();
+        }
+
+        updateUI();
+        document.getElementById('playBtn').disabled = false;
+        document.getElementById('betAmount').value = '';
+        selectedBet = null;
+        clearSelection();
+    }
+
+    function showResult(msg, bg) {
+        const box = document.getElementById('resultBox');
+        box.innerText = msg;
+        box.style.backgroundColor = bg;
+    }
+
+    function updatePeriod() {
+        currentPeriod++;
+        document.getElementById('periodId').innerText = currentPeriod;
+    }
+
+    function updateRecentResults(n) {
+        recentResults.unshift({ c: colorOfNumber(n), n: n });
+        if (recentResults.length > 6) recentResults.pop();
+        const container = document.getElementById('recentResults');
+        container.innerHTML = '';
+        recentResults.forEach(r => {
+            const dot = document.createElement('div');
+            dot.className = 'result-dot';
+            dot.style.backgroundColor = colorHex[r.c];
+            dot.innerText = r.n;
+            container.appendChild(dot);
+        });
+    }
+
+    // --- MODALS ---
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+        playClick();
+        if (id === 'historyModal') loadHistory();
+        if (id === 'withdrawModal') {
+            document.getElementById('withdrawBalance').innerText = '₹' + balance.toLocaleString('en-IN');
+        }
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    function selectAmount(amount, el) {
+        rechargeAmount = amount;
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('payBtn').innerText = `Request ₹${amount.toLocaleString('en-IN')}`;
+        playClick();
+    }
+
+    // --- DEPOSIT ---
+    async function processPayment() {
+        const payBtn = document.getElementById('payBtn');
+        payBtn.innerHTML = '<div class="spinner"></div> Submitting...';
+        payBtn.disabled = true;
+
+        setTimeout(async () => {
+            try {
+                const response = await fetch(`${API_URL}/deposit-request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser,
+                        amount: rechargeAmount,
+                        method: 'UPI'
+                    })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    playSuccess();
+                    payBtn.innerText = '✓ Request Sent!';
+                    payBtn.style.background = '#10b981';
+                    setTimeout(() => {
+                        closeModal('rechargeModal');
+                        payBtn.innerText = `Request ₹${rechargeAmount.toLocaleString('en-IN')}`;
+                        payBtn.style.background = '';
+                        payBtn.disabled = false;
+                        showResult(`⏳ ₹${rechargeAmount.toLocaleString('en-IN')} deposit requested. Waiting for admin approval.`, "#1e3a8a");
+                    }, 1500);
+                } else {
+                    alert('Error: ' + data.error);
+                    payBtn.innerText = `Request ₹${rechargeAmount.toLocaleString('en-IN')}`;
+                    payBtn.disabled = false;
+                }
+            } catch (error) {
+                alert('Error connecting to server');
+                payBtn.innerText = `Request ₹${rechargeAmount.toLocaleString('en-IN')}`;
+                payBtn.disabled = false;
+            }
+        }, 1000);
+    }
+
+    // --- WITHDRAWAL ---
+    async function processWithdrawal() {
+        const amount = parseInt(document.getElementById('withdrawAmount').value);
+        const upiId = document.getElementById('withdrawUPI').value.trim();
+        const withdrawBtn = document.getElementById('withdrawBtn');
+
+        if (!amount || amount < 100) return alert('Minimum withdrawal amount is ₹100');
+        if (amount > balance) return alert('Insufficient balance');
+        if (!upiId || !upiId.includes('@')) return alert('Please enter a valid UPI ID');
+        if (!confirm(`Withdraw ₹${amount} to ${upiId}?`)) return;
+
+        withdrawBtn.innerHTML = '<div class="spinner"></div> Submitting...';
+        withdrawBtn.disabled = true;
+
+        setTimeout(async () => {
+            try {
+                const response = await fetch(`${API_URL}/withdraw-request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentUser,
+                        amount,
+                        upiId
+                    })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    playSuccess();
+                    withdrawBtn.innerText = '✓ Request Sent!';
+                    withdrawBtn.style.background = '#10b981';
+                    setTimeout(() => {
+                        closeModal('withdrawModal');
+                        withdrawBtn.innerText = 'Request Withdrawal';
+                        withdrawBtn.style.background = '';
+                        withdrawBtn.disabled = false;
+                        document.getElementById('withdrawAmount').value = '';
+                        document.getElementById('withdrawUPI').value = '';
+                        showResult(`⏳ Withdrawal of ₹${amount} requested. Waiting for admin approval.`, "#1e3a8a");
+                    }, 1500);
+                } else {
+                    alert('Error: ' + data.error);
+                    withdrawBtn.innerText = 'Request Withdrawal';
+                    withdrawBtn.disabled = false;
+                }
+            } catch (error) {
+                alert('Error connecting to server');
+                withdrawBtn.innerText = 'Request Withdrawal';
+                withdrawBtn.disabled = false;
+            }
+        }, 1000);
+    }
+
+    // --- HISTORY ---
+    async function loadHistory() {
+        try {
+            const response = await fetch(`${API_URL}/history/${currentUser}`);
+            const data = await response.json();
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+
+            if (data.transactions.length === 0) {
+                list.innerHTML = '<li style="text-align:center; color:#94a3b8; padding:20px;">No transactions yet.</li>';
+                return;
+            }
+
+            data.transactions.forEach(t => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                const sign = t.isPositive ? '+' : '-';
+                const colorClass = t.isPositive ? 'positive' : 'negative';
+                const date = new Date(t.date);
+                const timeStr = date.toLocaleString();
+
+                li.innerHTML = `
+                    <div class="hist-details">
+                        <div class="hist-type">${t.type}</div>
+                        <div class="hist-date">${timeStr}</div>
+                    </div>
+                    <div class="hist-amount ${colorClass}">${sign}₹${t.amount.toLocaleString('en-IN')}</div>
+                `;
+                list.appendChild(li);
+            });
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+</script>
+
+</body>
+</html>
