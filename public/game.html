@@ -377,7 +377,7 @@
 </div>
 
 <script>
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL =    const API_URL = (location.protocol === 'file:') ? 'http://localhost:3000/api' : '/api';
     let currentUser = null;
     let balance = 0;
     let selectedBet = null; // {type:'color'|'side', value:'red'|'big'|...}
